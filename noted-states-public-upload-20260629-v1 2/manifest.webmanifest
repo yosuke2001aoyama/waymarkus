@@ -1,0 +1,18 @@
+{
+  "name": "Noted States",
+  "short_name": "Noted States",
+  "description": "A private U.S. road trip journal for visited states, field notes, and Factbook map layers.",
+  "start_url": "/#home",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#fffaf1",
+  "theme_color": "#102a5c",
+  "icons": [
+    {
+      "src": "/assets/noted-states-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

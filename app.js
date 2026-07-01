@@ -16,6 +16,7 @@ const pages = [
       const exports = ["Public-safe travel reflection", "Essay outline", "Substack-style essay", "Podcast script", "Japanese diary", "English field note", "Field report", "Markdown archive"];
       const syntheses = ["Recurring themes", "Compare places", "What surprised me", "Questions I kept asking", "What I learned about America", "Essay outline", "Podcast outline", "Field report"];
       let activeAtlasMode = "journal";
+      let sampleJourneyVisible = false;
       const sampleQuestions = [
         ["Louisville, Kentucky", "I’m in Louisville and I’m seeing bourbon everywhere. Why is bourbon so tied to Kentucky?"],
         ["Rural Kentucky", "I’m driving through rural Kentucky and there seem to be churches everywhere. What role do churches play in towns like this?"],
@@ -433,10 +434,10 @@ const pages = [
         }).join("")}<div class="mini-map-label"><strong>${personalPins.length ? "Your private map" : "Preview map"}</strong><span>${personalPins.length ? `${personalPins.length} mapped records` : "Routes, cities, parks, campuses"}</span></div>`;
       }
 
-      async function renderHomeMapSnapshot() {
+      async function renderHomeMapSnapshot(recordsOverride = null) {
         const target = document.querySelector("#homeMapSnapshot");
         if (!target) return;
-        const records = loadRecords();
+        const records = Array.isArray(recordsOverride) ? recordsOverride : loadRecords();
         const routeRecords = records.filter((record) => record.type === "route" && record.route_points?.length >= 2).slice(0, 2);
         const visitedRecords = records.filter((record) => record.type === "visited" && record.lat && record.lon).slice(0, 10);
         const userRecords = records.filter((record) => record.lat && record.lon && !["route", "visited"].includes(record.type)).slice(0, 8);
@@ -1542,6 +1543,51 @@ const pages = [
         };
       }
 
+      function sampleJourneyRecords() {
+        return [
+          makeRecord("visited", "Awe in the high desert", "Taos, New Mexico", "Adobe walls, galleries, mountains, and a slower rhythm made Taos feel older than the highway.", "awe,architecture,high desert", { visibility: "Sample preview", source: "sample" }),
+          makeRecord("question", "Why Nashville feels built around music", "Nashville, Tennessee", "Why does Nashville feel shaped by music as a civic institution, not just entertainment?", "music,civic culture,question", { visibility: "Sample preview", source: "sample" }),
+          makeRecord("food", "A diner that felt like a town hall", "Bloomington, Indiana", "The counter conversation made a college town feel warmer and more local than the map suggested.", "food,conversation,local institution", { visibility: "Sample preview", source: "sample" }),
+          makeRecord("visited", "Big sky road memory", "Grand Canyon National Park, Arizona", "The landscape turned the trip from a route into a scale lesson.", "national park,landscape,awe", { visibility: "Sample preview", source: "sample" }),
+          makeRecord("reflection", "A state changed by one encounter", "Austin, Texas", "One conversation about music, migration, and work made Texas feel more layered than the headline version.", "people,economy,reflection", { visibility: "Sample preview", source: "sample" }),
+          makeRecord("visited", "The road made industry visible", "Louisville, Kentucky", "Warehouses, river crossings, and food counters made logistics feel like a lived landscape, not a chart.", "industry,river,road", { visibility: "Sample preview", source: "sample" }),
+          makeRecord("conversation", "A farm table explanation of rural time", "Asheville, North Carolina", "A farmstay conversation connected weather, labor, food, and local pride in a way a guidebook rarely does.", "farmstay,food,rural life", { visibility: "Sample preview", source: "sample" }),
+        ];
+      }
+
+      async function renderSampleJourneyPreview() {
+        const output = document.querySelector("#sampleJourneyPreview");
+        const showButton = document.querySelector("#previewSampleJourney");
+        const hideButton = document.querySelector("#hideSampleJourney");
+        if (!output || !showButton || !hideButton) return;
+        if (!sampleJourneyVisible) {
+          output.innerHTML = `<div class="demo-empty"><strong>New here?</strong><span>Open the sample to see how a finished map feels before adding your own notes.</span></div>`;
+          showButton.hidden = false;
+          hideButton.hidden = true;
+          await renderHomeMapSnapshot();
+          return;
+        }
+        const records = sampleJourneyRecords();
+        const portrait = journeyPortraitData(records);
+        output.innerHTML = `
+          <article class="sample-journey-card">
+            <div class="eyebrow">Sample master journal</div>
+            <h3>${portrait.states.length}/50 states, ${portrait.places.length} places, ${portrait.meaningful} field notes</h3>
+            <p>This anonymized demo shows how a 10,000-mile U.S. field notebook can become a private map of questions, encounters, food memories, and state-by-state context. It does not touch your private records.</p>
+            <div class="sample-note-list">
+              ${records.slice(0, 4).map((record) => `<div><strong>${escapeHtml(record.place)}</strong><span>${escapeHtml(record.text)}</span></div>`).join("")}
+            </div>
+            <div class="toolbar"><button class="btn secondary sample-open-map">Open this as a map preview</button></div>
+          </article>`;
+        output.querySelector(".sample-open-map")?.addEventListener("click", () => {
+          setPage("map");
+          setAtlasMode("journal");
+        });
+        showButton.hidden = true;
+        hideButton.hidden = false;
+        await renderHomeMapSnapshot(records);
+      }
+
       function setPage(id) {
         if (!pages.some(([pageId]) => pageId === id)) id = "home";
         document.querySelectorAll(".page").forEach((page) => page.classList.toggle("active", page.id === id));
@@ -2121,6 +2167,7 @@ const pages = [
         renderJourneyPortrait();
         renderStateProgress();
         renderHomeMapSnapshot();
+        renderSampleJourneyPreview();
       }
 
       const primaryPages = primaryPageIds.map((id) => pages.find(([pageId]) => pageId === id)).filter(Boolean);
@@ -2142,6 +2189,14 @@ const pages = [
       });
       document.querySelectorAll(".trip-preset").forEach((button) => button.addEventListener("click", () => applyTripPreset(button.dataset.preset)));
       document.querySelector("#menuButton").addEventListener("click", () => document.querySelector("#sidebar").classList.toggle("open"));
+      document.querySelector("#previewSampleJourney")?.addEventListener("click", async () => {
+        sampleJourneyVisible = true;
+        await renderSampleJourneyPreview();
+      });
+      document.querySelector("#hideSampleJourney")?.addEventListener("click", async () => {
+        sampleJourneyVisible = false;
+        await renderSampleJourneyPreview();
+      });
       fillSelect("#briefLens", lenses);
       fillSelect("#askLens", ["General curiosity", "Local history", "Economy", "Religion and civic life", "Race and community", "Agriculture", "Food culture", "Urban design", "Sports and identity", "Transportation", "Nature and landscape"]);
       fillSelect("#noteType", types);

@@ -48,7 +48,7 @@ async function fetchJson(url, timeout = 6500) {
   try {
     const response = await fetch(url, {
       signal: controller.signal,
-      headers: { "User-Agent": "Waymark-US/1.0 (private field journal; source research)" },
+      headers: { "User-Agent": "NotedStates-US/1.0 (private field journal; source research)" },
     });
     if (!response.ok) throw new Error(`Source returned ${response.status}`);
     return await response.json();
@@ -86,7 +86,7 @@ async function fetchOfficialPage(url) {
       response = await fetch(currentUrl, {
         signal: controller.signal,
         redirect: "manual",
-        headers: { "User-Agent": "Waymark-US/1.0 (private field journal; source research)" },
+        headers: { "User-Agent": "NotedStates-US/1.0 (private field journal; source research)" },
       });
       if (![301, 302, 303, 307, 308].includes(response.status)) break;
       const location = response.headers.get("location");
@@ -355,7 +355,7 @@ function extractResponseText(payload) {
 
 async function askOpenAI(place, question, lens, sources) {
   const sourceMaterial = sources.map((source, index) => `[${index + 1}] ${source.title}\n${source.text.slice(0, 3000)}\n${source.url}`).join("\n\n");
-  const system = `You are Waymark, a private AI field-journal research assistant. Answer a traveler's question about a U.S. place using only the supplied source material and clearly marked cautious inference. Do not give generic checklists. Explain 2-4 concrete possible lenses relevant to the exact question. Generate 2-3 specific observations, one respectful local question, a caution against stereotyping or overgeneralizing, and useful field-note tags. Never invent names, statistics, teams, institutions, or causal claims. Return valid JSON only with exactly these keys: intelligent_brief (string), what_to_notice (array of strings), questions_to_ask (array of strings), what_not_to_assume (string), suggested_tags (array of strings).`;
+  const system = `You are Noted States, a private AI field-journal research assistant. Answer a traveler's question about a U.S. place using only the supplied source material and clearly marked cautious inference. Do not give generic checklists. Explain 2-4 concrete possible lenses relevant to the exact question. Generate 2-3 specific observations, one respectful local question, a caution against stereotyping or overgeneralizing, and useful field-note tags. Never invent names, statistics, teams, institutions, or causal claims. Return valid JSON only with exactly these keys: intelligent_brief (string), what_to_notice (array of strings), questions_to_ask (array of strings), what_not_to_assume (string), suggested_tags (array of strings).`;
   const response = await fetch("https://api.openai.com/v1/responses", {
     method: "POST",
     headers: { ...JSON_HEADERS, Authorization: `Bearer ${process.env.OPENAI_API_KEY}` },
@@ -365,7 +365,7 @@ async function askOpenAI(place, question, lens, sources) {
       text: {
         format: {
           type: "json_schema",
-          name: "waymark_place_answer",
+          name: "noted_states_place_answer",
           strict: true,
           schema: {
             type: "object",
@@ -389,14 +389,14 @@ async function askOpenAI(place, question, lens, sources) {
 
 async function briefOpenAI(place, lens, question, sources) {
   const sourceMaterial = sources.map((source, index) => `[${index + 1}] ${source.title}\n${source.text.slice(0, 3200)}\n${source.url}`).join("\n\n");
-  const system = `You are Waymark's place researcher. Create a concise, fact-rich field guide for the exact U.S. destination using only the supplied sources. Never output generic travel-writing templates. Name real industries, institutions, foods, teams, districts, landmarks, events, and historical forces when the sources support them. Omit a section rather than inventing content. Separate sourced fact from cautious interpretation. Field anchors are places useful for observing local life, not ranked tourist attractions. Return valid JSON only.`;
+  const system = `You are the Noted States place researcher. Create a concise, fact-rich field guide for the exact U.S. destination using only the supplied sources. Never output generic travel-writing templates. Name real industries, institutions, foods, teams, districts, landmarks, events, and historical forces when the sources support them. Omit a section rather than inventing content. Separate sourced fact from cautious interpretation. Field anchors are places useful for observing local life, not ranked tourist attractions. Return valid JSON only.`;
   const response = await fetch("https://api.openai.com/v1/responses", {
     method: "POST",
     headers: { ...JSON_HEADERS, Authorization: `Bearer ${process.env.OPENAI_API_KEY}` },
     body: JSON.stringify({
       model: process.env.OPENAI_MODEL || "gpt-5-mini",
       input: `${system}\n\nDESTINATION: ${place}\nLENS: ${lens}\nOPTIONAL QUESTION: ${question || "None"}\n\nSOURCE MATERIAL:\n${sourceMaterial}`,
-      text: { format: { type: "json_schema", name: "waymark_researched_brief", strict: true, schema: {
+      text: { format: { type: "json_schema", name: "noted_states_researched_brief", strict: true, schema: {
         type: "object", additionalProperties: false,
         properties: {
           destination: { type: "string" }, researched_at: { type: "string" }, fifteen_seconds: { type: "string" },
@@ -422,7 +422,7 @@ export default async function handler(req, res) {
   }
   if (isRateLimited(req)) {
     res.setHeader("Retry-After", "600");
-    return res.status(429).json({ error: "Waymark has received too many questions from this connection. Please try again in a few minutes." });
+    return res.status(429).json({ error: "Noted States has received too many questions from this connection. Please try again in a few minutes." });
   }
   const place = cleanPlace(req.body?.place || "").slice(0, 120);
   const question = String(req.body?.question || "").trim().slice(0, 600);
@@ -466,6 +466,6 @@ export default async function handler(req, res) {
     });
   } catch (error) {
     console.error("Ask endpoint error:", error);
-    return res.status(500).json({ error: "Waymark could not research this question right now. Please try again shortly." });
+    return res.status(500).json({ error: "Noted States could not research this question right now. Please try again shortly." });
   }
 }

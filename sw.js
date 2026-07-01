@@ -1,5 +1,5 @@
-const CACHE = "waymark-shell-v26-map-pin-rank-20260627";
-const SHELL = ["/", "/index.html", "/style.css", "/app.js", "/offline.html", "/support.html", "/privacy.html", "/terms.html", "/scale-review.html", "/manifest.webmanifest", "/assets/waymark-icon.svg"];
+const CACHE = "noted-states-shell-v1-20260629";
+const SHELL = ["/", "/index.html", "/style.css", "/app.js", "/offline.html", "/support.html", "/privacy.html", "/terms.html", "/scale-review.html", "/manifest.webmanifest", "/assets/noted-states-icon.svg"];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(caches.open(CACHE).then((cache) => cache.addAll(SHELL)));

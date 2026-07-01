@@ -168,10 +168,10 @@ const pages = [
         nashville: { teams: "Titans, Predators, Vanderbilt, college football, live-music crowds", food: "hot chicken, meat-and-three, biscuits, barbecue, songwriter bars", economy: "music business, healthcare, tourism, universities, logistics, state government", politics: "Davidson County leans Democratic while Tennessee statewide is strongly Republican.", anchors: "Broadway edges, East Nashville, Fisk/Meharry area, state capitol, hot chicken counters" },
         detroit: { teams: "Lions, Tigers, Pistons, Red Wings, high-school and neighborhood sports", food: "Detroit-style pizza, coney dogs, Middle Eastern food, soul food, bakeries", economy: "auto industry, logistics, healthcare, design, music, downtown redevelopment", politics: "Detroit is strongly Democratic; metro-suburban contrasts matter.", anchors: "Eastern Market, riverfront, Corktown, Dearborn food corridors, auto heritage sites" },
       };
-      const storeKey = "waymark_private_records_v2";
-      const briefCacheKey = "waymark_researched_briefs_v10";
-      const accessKey = "waymark.preview.access";
-      const accessToken = "wm-road-preview";
+      const storeKey = "NotedStates_private_records_v2";
+      const briefCacheKey = "NotedStates_researched_briefs_v10";
+      const accessKey = "NotedStates.preview.access";
+      const accessToken = "ns-road-preview";
       const previewPasscode = "road-notes";
       const stateIndustryProfiles = {
         Alabama: ["logistics", "automotive manufacturing, aerospace around Huntsville, universities and college football, Black Belt agriculture, and Mobile port logistics"],
@@ -331,7 +331,7 @@ const pages = [
 
       function journalSharePayload() {
         return {
-          app: "Waymark U.S.",
+          app: "Noted States",
           kind: "read-only-journal-snapshot",
           created_at: new Date().toISOString(),
           records: safeShareRecords(),
@@ -360,7 +360,7 @@ const pages = [
           localStorage.setItem(`${storeKey}:shared`, JSON.stringify(imported));
           window.history.replaceState({}, "", `${window.location.pathname}#map`);
         } catch (error) {
-          console.warn("Could not load shared Waymark snapshot", error);
+          console.warn("Could not load shared Noted States snapshot", error);
         }
       }
 
@@ -393,7 +393,7 @@ const pages = [
       function portraitMarkup(records = loadRecords()) {
         const data = journeyPortraitData(records);
         if (!records.length) {
-          return `<article class="portrait-card"><div class="eyebrow">Your private journey portrait</div><h3>A blank map is an invitation.</h3><p>Ask one place question or save one field note. Waymark will build a portrait of what you noticed, not a trail of everywhere you went.</p><button class="btn light portrait-start">Capture the first observation</button></article>`;
+          return `<article class="portrait-card"><div class="eyebrow">Your private journey portrait</div><h3>A blank map is an invitation.</h3><p>Ask one place question or save one field note. Noted States will build a portrait of what you noticed, not a trail of everywhere you went.</p><button class="btn light portrait-start">Capture the first observation</button></article>`;
         }
         return `<article class="portrait-card"><div class="eyebrow">Journey portrait</div><h3>${escapeHtml(data.states.length ? `${data.states.length} ${data.states.length === 1 ? "state" : "states"} visited` : `A journey shaped by ${data.topTheme}`)}</h3><div class="portrait-stats"><div class="portrait-stat"><strong>${data.states.length}</strong><span>states</span></div><div class="portrait-stat"><strong>${data.places.length}</strong><span>places</span></div><div class="portrait-stat"><strong>${data.meaningful}</strong><span>notes</span></div><div class="portrait-stat"><strong>${data.questions}</strong><span>questions</span></div></div><div class="toolbar"><button class="btn light share-portrait">Create card</button><button class="btn secondary portrait-map">Open Map</button></div></article>`;
       }
@@ -595,7 +595,7 @@ const pages = [
         context.textAlign = "center";
         context.fillStyle = "rgba(255,255,255,.88)";
         context.font = "900 22px system-ui";
-        context.fillText("waymarkus", 540, 1010);
+        context.fillText("noted states", 540, 1010);
         return canvas;
       }
 
@@ -611,9 +611,9 @@ const pages = [
           const canvas = await portraitCanvas(data);
           const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
           if (!blob) return;
-          const file = new File([blob], "waymark-journey.png", { type: "image/png" });
+          const file = new File([blob], "noted-states-journey.png", { type: "image/png" });
           if (navigator.canShare?.({ files: [file] })) {
-            try { await navigator.share({ title: "waymarkus", files: [file] }); return; } catch (error) { if (error.name === "AbortError") return; }
+            try { await navigator.share({ title: "Noted States", files: [file] }); return; } catch (error) { if (error.name === "AbortError") return; }
           }
           const link = document.createElement("a");
           link.href = URL.createObjectURL(blob);
@@ -1021,7 +1021,7 @@ const pages = [
       }
 
       function renderFallbackUsMap(map, options = {}) {
-        map.innerHTML = `<div class="map-loading"><h3>U.S. map could not load.</h3><p>Please reload this page. Waymark needs the state boundary file to draw the map correctly.</p></div>`;
+        map.innerHTML = `<div class="map-loading"><h3>U.S. map could not load.</h3><p>Please reload this page. Noted States needs the state boundary file to draw the map correctly.</p></div>`;
       }
 
       async function drawRealUsMap(map, options = {}) {
@@ -1160,7 +1160,7 @@ const pages = [
           <g class="climate-state-lines">${stateLines.map((line) => `<polyline points="${line.map(([x, y]) => `${x},${y}`).join(" ")}" />`).join("")}</g>
           <g>${labels}</g>
           <g class="climate-insets"><rect x="5" y="70" width="16" height="13" /><text x="7" y="78">AK</text><rect x="24" y="75" width="13" height="8" /><text x="27" y="81">HI</text></g>
-          <text class="atlas-caption" x="4" y="93">Köppen-style climate regions · simplified for Waymark Factbook</text>
+          <text class="atlas-caption" x="4" y="93">Köppen-style climate regions · simplified for Noted States Factbook</text>
         </svg>`;
       }
 
@@ -1647,7 +1647,7 @@ const pages = [
           ? "Web sources summarized with AI."
           : data.mode === "local-template"
             ? "Prototype mode: this cautious response is template-based because live research is unavailable."
-            : "Prototype mode: live references are summarized with Waymark's deterministic no-key fallback.";
+            : "Prototype mode: live references are summarized with the Noted States deterministic no-key fallback.";
         return `<article class="note"><div class="eyebrow">Sourced intelligent brief</div><h3>Possible lenses</h3><p>${escapeHtml(data.intelligent_brief)}</p></article>
           <article class="note"><h3>What to notice next</h3><ul class="dynamic-list">${notices}</ul></article>
           <article class="note"><h3>What not to assume</h3><p>${escapeHtml(data.what_not_to_assume || "Do not assume one visible scene represents the whole place or everyone who lives there.")}</p></article>
@@ -1835,7 +1835,7 @@ const pages = [
         }));
         document.querySelector("#needsLocation").innerHTML = missing.length
           ? `<article class="note"><h3>Needs location</h3><p>${missing.map((r) => escapeHtml(r.title)).join(", ")}</p></article>`
-          : (!filtered.length && !["Destination stock", "State industries", "Emotional bias"].includes(selected) ? `<article class="note"><h3>Your map is empty.</h3><p>Start by asking Waymark about something you notice on the road.</p><button class="btn empty-map-ask">Ask about what I’m seeing</button></article>` : "");
+          : (!filtered.length && !["Destination stock", "State industries", "Emotional bias"].includes(selected) ? `<article class="note"><h3>Your map is empty.</h3><p>Start by asking Noted States about something you notice on the road.</p><button class="btn empty-map-ask">Ask about what I’m seeing</button></article>` : "");
         renderBiasFeed(showBias ? allBiasEntries : []);
         document.querySelector(".empty-map-ask")?.addEventListener("click", () => setPage("ask"));
       }
@@ -2160,7 +2160,7 @@ const pages = [
         document.querySelector("#askObservation").value = button.dataset.question;
         setPage("ask");
         if (button.dataset.place) runAsk();
-        else document.querySelector("#askStatus").textContent = "Add the town or place where you saw this, then ask Waymark.";
+        else document.querySelector("#askStatus").textContent = "Add the town or place where you saw this, then ask Noted States.";
       }));
 
       document.querySelector("#generateBrief").addEventListener("click", async () => {
@@ -2195,7 +2195,7 @@ const pages = [
           }
           output.innerHTML = renderBriefOutput(data);
         } catch (error) {
-          output.innerHTML = `<article class="note"><h3>Research unavailable</h3><p>${escapeHtml(error.message || "Waymark could not research this destination right now.")}</p><p>No generic substitute has been shown. Please reconnect and try again.</p></article>`;
+          output.innerHTML = `<article class="note"><h3>Research unavailable</h3><p>${escapeHtml(error.message || "Noted States could not research this destination right now.")}</p><p>No generic substitute has been shown. Please reconnect and try again.</p></article>`;
           return;
         } finally {
           button.disabled = false;
@@ -2217,7 +2217,7 @@ const pages = [
         const lens = document.querySelector("#askLens").value;
         const status = document.querySelector("#askStatus");
         const output = document.querySelector("#askOutput");
-        const button = document.querySelector("#askWaymark");
+        const button = document.querySelector("#askPlaceQuestion");
         if (!place || !observation) {
           status.textContent = "Enter both a place and what you are trying to understand.";
           return;
@@ -2240,11 +2240,11 @@ const pages = [
           showAskResult(fallback, place, observation, lens, "Prototype mode: a cautious local template is shown because live research is unavailable.");
         } finally {
           button.disabled = false;
-          button.textContent = "Ask Waymark";
+          button.textContent = "Ask Noted States";
         }
       }
 
-      document.querySelector("#askWaymark").addEventListener("click", runAsk);
+      document.querySelector("#askPlaceQuestion").addEventListener("click", runAsk);
 
       let recognition;
       let silenceTimer;
@@ -2293,7 +2293,7 @@ const pages = [
         document.querySelector("#askPlace").value = place;
         setPage("ask");
         if (place) runAsk();
-        else document.querySelector("#askStatus").textContent = "I kept your observation. Add the place so Waymark can build a specific answer.";
+        else document.querySelector("#askStatus").textContent = "I kept your observation. Add the place so Noted States can build a specific answer.";
       });
 
       document.querySelector("#homeSave").addEventListener("click", () => {
@@ -2386,7 +2386,7 @@ const pages = [
         const draft = document.querySelector("#generatedDraft")?.value || "";
         if (!draft) return;
         if (navigator.share) {
-          try { await navigator.share({ title: "Waymark U.S. draft", text: draft }); return; } catch (error) { if (error.name === "AbortError") return; }
+          try { await navigator.share({ title: "Noted States draft", text: draft }); return; } catch (error) { if (error.name === "AbortError") return; }
         }
         await navigator.clipboard.writeText(draft);
         window.alert("Draft copied to the clipboard.");
@@ -2401,7 +2401,7 @@ const pages = [
       });
 
       document.querySelector("#deleteLocalData").addEventListener("click", () => {
-        if (!window.confirm("Delete all private Waymark records stored in this browser? This cannot be undone.")) return;
+        if (!window.confirm("Delete all private Noted States records stored in this browser? This cannot be undone.")) return;
         localStorage.removeItem(storeKey);
         localStorage.removeItem(`${storeKey}:shared`);
         renderAll();

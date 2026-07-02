@@ -2629,10 +2629,6 @@ const pages = [
       window.addEventListener("hashchange", () => setPage(location.hash.replace("#", "") || "home"));
       updateNetworkStatus();
 
-      if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
-        navigator.serviceWorker.register("./sw.js").catch(() => {});
-      }
-
       loadSharedSnapshotFromUrl().finally(() => {
         renderAll();
         initializeAccessGate();

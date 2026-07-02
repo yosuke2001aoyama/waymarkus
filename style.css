@@ -2531,7 +2531,22 @@
         .hero h2 { font-size: clamp(2rem, 9vw, 3rem); }
 
         .quick-capture {
+          display: grid;
+          width: 100%;
+          max-width: 100%;
+          grid-template-columns: 1fr;
           margin-top: 18px;
+        }
+
+        .quick-capture.home-flow {
+          grid-template-columns: 1fr;
+        }
+
+        .quick-capture > *,
+        .home-flow > * {
+          width: 100%;
+          max-width: 100%;
+          min-width: 0;
         }
 
         .hero-actions {

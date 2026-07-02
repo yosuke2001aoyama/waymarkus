@@ -1,5 +1,14 @@
-const CACHE = "noted-states-shell-v1-20260629";
-const SHELL = ["/", "/index.html", "/style.css", "/app.js", "/offline.html", "/support.html", "/privacy.html", "/terms.html", "/scale-review.html", "/manifest.webmanifest", "/assets/noted-states-icon.svg"];
+const CACHE = "noted-states-pwa-v1-20260701";
+const SHELL = [
+  "/",
+  "/index.html",
+  "/style.css",
+  "/app.js",
+  "/offline.html",
+  "/manifest.json",
+  "/icon-192.png",
+  "/icon-512.png"
+];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(caches.open(CACHE).then((cache) => cache.addAll(SHELL)));

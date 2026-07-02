@@ -273,14 +273,26 @@ const pages = [
         return "wm-" + Date.now().toString(36) + "-" + Math.random().toString(36).slice(2);
       }
 
-      function loadRecords() {
+      function loadPrivateRecords() {
         try {
           const existing = JSON.parse(localStorage.getItem(storeKey) || "[]");
-          const shared = JSON.parse(localStorage.getItem(`${storeKey}:shared`) || "[]");
-          return [...(Array.isArray(existing) ? existing : []), ...(Array.isArray(shared) ? shared : [])];
+          return Array.isArray(existing) ? existing : [];
         } catch {
           return [];
         }
+      }
+
+      function loadSharedRecords() {
+        try {
+          const shared = JSON.parse(localStorage.getItem(`${storeKey}:shared`) || "[]");
+          return Array.isArray(shared) ? shared : [];
+        } catch {
+          return [];
+        }
+      }
+
+      function loadRecords() {
+        return [...loadPrivateRecords(), ...loadSharedRecords()];
       }
 
       function saveRecords(records) {
@@ -304,7 +316,10 @@ const pages = [
       }
 
       function safeShareRecords(records = loadRecords()) {
-        return records.slice(0, 80).map((record) => ({
+        return records
+          .filter((record) => !record.shared && record.visibility !== "shared_snapshot")
+          .slice(0, 80)
+          .map((record) => ({
           id: record.id,
           type: record.type,
           title: record.title,
@@ -388,7 +403,10 @@ const pages = [
           if (tag && !["question", "observation", "place brief", "quick capture"].includes(tag)) tagCounts[tag] = (tagCounts[tag] || 0) + 1;
         }));
         const topTheme = Object.entries(tagCounts).sort((a, b) => b[1] - a[1])[0]?.[0] || (records.length ? "place and memory" : "waiting to be noticed");
-        return { states, regions, places, questions, meaningful, topTheme, percent: Math.min(100, (states.length / 50) * 100) };
+        const spotlight = records.find((record) => !["visited", "route", "place_brief"].includes(record.type) && (record.summary || record.text || record.title)) || records.find((record) => record.summary || record.text || record.title);
+        const topNoticing = spotlight ? String(spotlight.summary || spotlight.text || spotlight.title || "").replace(/\s+/g, " ").trim().slice(0, 118) : "";
+        const topPlace = spotlight?.place || "";
+        return { states, regions, places, questions, meaningful, topTheme, topNoticing, topPlace, percent: Math.min(100, (states.length / 50) * 100) };
       }
 
       function portraitMarkup(records = loadRecords()) {
@@ -408,6 +426,43 @@ const pages = [
         document.querySelectorAll(".portrait-start").forEach((button) => button.addEventListener("click", () => setPage("capture")));
         document.querySelectorAll(".portrait-map").forEach((button) => button.addEventListener("click", () => setPage("map")));
         document.querySelectorAll(".share-portrait").forEach((button) => button.addEventListener("click", shareJourneyPortrait));
+      }
+
+      function renderSharePreview() {
+        const target = document.querySelector("#friendViewPreview");
+        if (!target) return;
+        const outgoing = safeShareRecords(loadPrivateRecords());
+        const imported = loadSharedRecords();
+        const portrait = journeyPortraitData(outgoing);
+        const visibleItems = outgoing.slice(0, 4);
+        const visibleMarkup = visibleItems.length
+          ? visibleItems.map((record) => `<article class="friend-visible-card"><strong>${escapeHtml(record.title || "Untitled note")}</strong><span>${escapeHtml(record.place || record.state || "Place hidden")}</span><p>${escapeHtml(record.summary || "Short safe summary only.")}</p></article>`).join("")
+          : `<article class="friend-visible-card empty"><strong>No shareable notes yet.</strong><span>Save a note or mark a place first.</span></article>`;
+        target.innerHTML = `
+          <div class="friend-preview-grid">
+            <div class="friend-map-card">
+              <div class="eyebrow">Visible to friend</div>
+              <h4>${portrait.states.length}/50 states · ${portrait.percent.toFixed(0)}%</h4>
+              <p>${escapeHtml(portrait.topNoticing || "Only titles, places, summaries, and map points are included.")}</p>
+              <div class="visible-pill-row">
+                <span>${outgoing.length} safe records</span>
+                <span>${portrait.places.length} places</span>
+                <span>${imported.length ? `${imported.length} friend-layer records loaded` : "No friend layer loaded"}</span>
+              </div>
+            </div>
+            <div class="friend-hidden-card">
+              <div class="eyebrow">Hidden from friend</div>
+              <ul>
+                <li>Raw voice transcripts</li>
+                <li>Full private note text</li>
+                <li>Draft exports and public-safe drafts</li>
+                <li>Future itinerary or live location</li>
+                <li>Anything not in this read-only snapshot</li>
+              </ul>
+            </div>
+          </div>
+          <div class="friend-visible-list">${visibleMarkup}</div>
+        `;
       }
 
       function homeMapSnapshotMarkup() {
@@ -586,17 +641,23 @@ const pages = [
           context.fillText(stateAbbr(feature.properties.name), cx, cy + 4);
         });
         context.restore();
-        context.strokeStyle = "rgba(255,255,255,.42)";
-        context.lineWidth = 1.2;
-        context.beginPath();
-        context.moveTo(210, 946);
-        context.lineTo(870, 946);
-        context.stroke();
-
+        const spotlight = data.topNoticing || "A private map of the places you noticed.";
         context.textAlign = "center";
-        context.fillStyle = "rgba(255,255,255,.88)";
-        context.font = "900 22px system-ui";
-        context.fillText("noted states", 540, 1010);
+        context.fillStyle = "#fffdf8";
+        context.font = "900 24px system-ui";
+        context.fillText(data.topPlace ? data.topPlace.toUpperCase() : "PRIVATE ROAD JOURNAL", 540, 930);
+        context.fillStyle = "rgba(255,255,255,.9)";
+        context.font = "800 28px Georgia";
+        wrapCanvasText(context, spotlight, 540, 968, 800, 34, 2);
+        context.strokeStyle = "rgba(255,255,255,.34)";
+        context.lineWidth = 1;
+        context.beginPath();
+        context.moveTo(260, 1030);
+        context.lineTo(820, 1030);
+        context.stroke();
+        context.fillStyle = "rgba(255,255,255,.82)";
+        context.font = "900 18px system-ui";
+        context.fillText("noted states", 540, 1058);
         return canvas;
       }
 
@@ -2168,6 +2229,7 @@ const pages = [
         renderStateProgress();
         renderHomeMapSnapshot();
         renderSampleJourneyPreview();
+        renderSharePreview();
       }
 
       const primaryPages = primaryPageIds.map((id) => pages.find(([pageId]) => pageId === id)).filter(Boolean);
@@ -2258,7 +2320,7 @@ const pages = [
         }
         document.querySelector("#saveBrief").addEventListener("click", () => {
           const text = [data.fifteen_seconds, ...(data.local_history || []), ...(data.economy_industries || []), ...(data.food_institutions || []), ...(data.sports_civic_culture || []), ...(data.politics_civic_baseline || []), ...(data.field_anchors || [])].filter(Boolean).join("\\n\\n");
-          const records = loadRecords();
+          const records = loadPrivateRecords();
           records.unshift(makeRecord("place_brief", "How to read " + found[0], canonical, text, "place brief", { ai: text, summary: data.fifteen_seconds }));
           saveRecords(records);
           document.querySelector("#briefOutput").insertAdjacentHTML("afterbegin", `<article class="note"><p>Saved as a private place brief.</p></article>`);
@@ -2360,7 +2422,7 @@ const pages = [
         const guessedType = text.includes("?") || /\b(why|what|how|i want to know|i was wondering)\b/i.test(text) ? "question" : "observation";
         const typedPlace = document.querySelector("#homeQuickPlace")?.value.trim();
         const place = typedPlace || inferPlaceFromText(text);
-        const records = loadRecords();
+        const records = loadPrivateRecords();
         records.unshift(makeRecord(guessedType, titleFrom(text), place, text, guessedType + ",quick capture"));
         saveRecords(records);
         document.querySelector("#homeQuickText").value = "";
@@ -2383,7 +2445,7 @@ const pages = [
         const title = document.querySelector("#noteTitle").value || titleFrom(text);
         if (!place && !text && !title) return;
         const type = slugType(document.querySelector("#noteType").value);
-        const records = loadRecords();
+        const records = loadPrivateRecords();
         records.unshift(makeRecord(type, title, place, text, type, { visibility: document.querySelector("#noteVisibility").value }));
         saveRecords(records);
         document.querySelector("#captureOutput").innerHTML = `<article class="save-confirmation"><div class="eyebrow">Your journey is growing</div><h3>Saved${place ? ` to ${escapeHtml(place)}` : " privately"}.</h3><p>${place ? "Added to Memory Map. " : "It needs a place before it can appear on the map. "}You now have ${records.length} private ${records.length === 1 ? "record" : "records"}.</p><div class="toolbar"><button class="btn capture-go" data-destination="library">Open Library</button><button class="btn secondary capture-go" data-destination="${place ? "map" : "capture"}">${place ? "View Map" : "Add location"}</button></div></article>`;
@@ -2396,7 +2458,7 @@ const pages = [
         const preview = drawRouteFromInputs(false);
         if (!preview) return;
         const tempRecord = routeRecordFromPreview(preview);
-        const stored = loadRecords();
+        const stored = loadPrivateRecords();
         localStorage.setItem(storeKey, JSON.stringify([tempRecord, ...stored]));
         renderMap();
         localStorage.setItem(storeKey, JSON.stringify(stored));
@@ -2405,8 +2467,41 @@ const pages = [
       document.querySelector("#markVisited").addEventListener("click", markVisitedPlace);
       document.querySelector("#shareTravelMap").addEventListener("click", shareJourneyPortrait);
       document.querySelector("#sharePageCard")?.addEventListener("click", shareJourneyPortrait);
-      document.querySelector("#copyJournalShareLink")?.addEventListener("click", () => copyText(journalShareUrl(), "#journalShareOutput"));
-      document.querySelector("#copyJournalShareCode")?.addEventListener("click", () => copyText(journalShareCode(), "#journalShareOutput"));
+      document.querySelector("#copyJournalShareLink")?.addEventListener("click", async () => {
+        await copyText(journalShareUrl(), "#journalShareOutput");
+        renderSharePreview();
+      });
+      document.querySelector("#copyJournalShareCode")?.addEventListener("click", async () => {
+        await copyText(journalShareCode(), "#journalShareOutput");
+        renderSharePreview();
+      });
+      document.querySelector("#clearJournalShare")?.addEventListener("click", () => {
+        localStorage.removeItem(`${storeKey}:shared`);
+        const output = document.querySelector("#journalShareOutput");
+        if (output) output.value = "Friend layer cleared from this browser. Previously copied links contain only the safe snapshot encoded in that link.";
+        renderAll();
+      });
+      document.querySelector("#saveFriendReaction")?.addEventListener("click", () => {
+        const place = document.querySelector("#friendReactionPlace")?.value.trim() || "";
+        const text = cleanTranscript(document.querySelector("#friendReactionText")?.value || "");
+        const output = document.querySelector("#friendReactionOutput");
+        if (!text) {
+          if (output) output.textContent = "Write one quick reaction first.";
+          return;
+        }
+        const records = loadPrivateRecords();
+        records.unshift(makeRecord("reflection", titleFrom(text) || "Reaction to a shared journey", place, text, "friend reaction,shared map", { summary: `Private reaction${place ? ` to ${place}` : ""}: ${text.slice(0, 120)}` }));
+        saveRecords(records);
+        if (document.querySelector("#friendReactionText")) document.querySelector("#friendReactionText").value = "";
+        if (output) output.textContent = "Saved privately to your Library.";
+      });
+      document.querySelectorAll(".prompt-chip").forEach((button) => button.addEventListener("click", () => {
+        const target = document.querySelector(button.dataset.fill);
+        if (!target) return;
+        const text = button.dataset.text || "";
+        target.value = target.value.trim() ? `${target.value.trim()} ${text}` : text;
+        target.focus();
+      }));
       document.querySelector("#previewBoundary")?.addEventListener("click", renderBoundaryPreview);
       document.querySelector("#libraryFilter").addEventListener("change", renderLibrary);
       document.querySelector("#librarySearch").addEventListener("input", renderLibrary);

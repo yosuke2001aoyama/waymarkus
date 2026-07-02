@@ -1021,6 +1021,31 @@
         border-left: 5px solid var(--gold);
       }
 
+      .prompt-strip {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin: 10px 0 16px;
+      }
+
+      .prompt-chip {
+        border: 1px solid rgba(16,42,92,.18);
+        background: rgba(255,255,255,.74);
+        color: var(--navy);
+        border-radius: 999px;
+        padding: 9px 13px;
+        font-size: .82rem;
+        font-weight: 900;
+        cursor: pointer;
+        transition: transform .16s ease, border-color .16s ease, background .16s ease;
+      }
+
+      .prompt-chip:hover {
+        transform: translateY(-1px);
+        border-color: rgba(184,33,50,.38);
+        background: rgba(255,253,248,.98);
+      }
+
       .journey-portrait {
         margin: 24px 0;
       }
@@ -1098,6 +1123,96 @@
       .portrait-stat span { color: rgba(255,255,255,.7); font-size: .82rem; }
 
       .portrait-card .btn.secondary { color: white; border-color: rgba(255,255,255,.45); }
+
+      .share-safety-grid {
+        align-items: stretch;
+      }
+
+      .friend-preview-panel,
+      .reaction-panel {
+        margin-top: 18px;
+      }
+
+      .friend-preview-grid {
+        display: grid;
+        grid-template-columns: 1.2fr .8fr;
+        gap: 16px;
+      }
+
+      .friend-map-card,
+      .friend-hidden-card,
+      .friend-visible-card {
+        padding: 18px;
+        border: 1px solid rgba(16,42,92,.14);
+        background: rgba(255,253,248,.9);
+      }
+
+      .friend-map-card {
+        background:
+          linear-gradient(135deg, rgba(16,42,92,.96), rgba(184,33,50,.88)),
+          repeating-linear-gradient(0deg, rgba(255,255,255,.1) 0 14px, rgba(255,255,255,0) 14px 28px);
+        color: white;
+      }
+
+      .friend-map-card .eyebrow,
+      .friend-map-card p {
+        color: rgba(255,255,255,.82);
+      }
+
+      .friend-map-card h4 {
+        margin: 4px 0 10px;
+        font-family: Georgia, "Times New Roman", serif;
+        font-size: clamp(2rem, 5vw, 3.4rem);
+        line-height: .95;
+      }
+
+      .visible-pill-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 14px;
+      }
+
+      .visible-pill-row span {
+        display: inline-flex;
+        padding: 7px 10px;
+        border-radius: 999px;
+        background: rgba(255,255,255,.14);
+        border: 1px solid rgba(255,255,255,.22);
+        font-size: .78rem;
+        font-weight: 900;
+      }
+
+      .friend-hidden-card ul {
+        margin: 10px 0 0;
+        padding-left: 18px;
+        color: var(--muted);
+        line-height: 1.7;
+      }
+
+      .friend-visible-list {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+        margin-top: 14px;
+      }
+
+      .friend-visible-card {
+        display: grid;
+        gap: 6px;
+        border-left: 4px solid var(--red);
+      }
+
+      .friend-visible-card strong {
+        color: var(--ink);
+        font-size: 1rem;
+      }
+
+      .friend-visible-card span,
+      .friend-visible-card p {
+        color: var(--muted);
+        margin: 0;
+      }
 
       .boundary-intro {
         display: grid;
@@ -2307,6 +2422,8 @@
         .grid,
         .grid.two,
         .portrait-stats,
+        .friend-preview-grid,
+        .friend-visible-list,
         .boundary-intro,
         .quick-capture,
         .start-grid,

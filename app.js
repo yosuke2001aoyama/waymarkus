@@ -365,15 +365,59 @@ const pages = [
         return url.toString();
       }
 
-      function loadSharedSnapshotFromUrl() {
+      async function createShortShare() {
+        const response = await fetch("/api/share", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(journalSharePayload()),
+        });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(data.error || "8-digit share codes are not configured yet.");
+        return data;
+      }
+
+      function shortShareUrl(code) {
+        const url = new URL(window.location.href);
+        url.searchParams.delete("share");
+        url.searchParams.set("shareCode", code);
+        url.hash = "map";
+        return url.toString();
+      }
+
+      function importSharedRecords(records = []) {
+        const imported = records.map((record) => ({ ...record, id: `shared-${record.id || uid()}`, visibility: "shared_snapshot", shared: true }));
+        localStorage.setItem(`${storeKey}:shared`, JSON.stringify(imported));
+        renderAll();
+      }
+
+      async function loadShortShareCode(code) {
+        const cleanCode = String(code || "").replace(/\D/g, "").slice(0, 8);
+        if (!/^\d{8}$/.test(cleanCode)) throw new Error("Enter an 8-digit share code.");
+        const response = await fetch(`/api/share?code=${encodeURIComponent(cleanCode)}`);
+        const payload = await response.json().catch(() => ({}));
+        if (!response.ok || !Array.isArray(payload.records)) throw new Error(payload.error || "Share code not found.");
+        importSharedRecords(payload.records);
+        return payload;
+      }
+
+      async function loadSharedSnapshotFromUrl() {
         const params = new URLSearchParams(window.location.search);
+        const shortCode = params.get("shareCode");
+        if (shortCode) {
+          try {
+            await loadShortShareCode(shortCode);
+            window.history.replaceState({}, "", `${window.location.pathname}#map`);
+          } catch (error) {
+            console.warn("Could not load short Noted States snapshot", error);
+          }
+          return;
+        }
         const code = params.get("share");
         if (!code) return;
         try {
           const payload = decodeSharePayload(code);
           if (!Array.isArray(payload.records)) throw new Error("No shared records");
-          const imported = payload.records.map((record) => ({ ...record, id: `shared-${record.id || uid()}`, visibility: "shared_snapshot", shared: true }));
-          localStorage.setItem(`${storeKey}:shared`, JSON.stringify(imported));
+          importSharedRecords(payload.records);
           window.history.replaceState({}, "", `${window.location.pathname}#map`);
         } catch (error) {
           console.warn("Could not load shared Noted States snapshot", error);
@@ -2468,12 +2512,42 @@ const pages = [
       document.querySelector("#shareTravelMap").addEventListener("click", shareJourneyPortrait);
       document.querySelector("#sharePageCard")?.addEventListener("click", shareJourneyPortrait);
       document.querySelector("#copyJournalShareLink")?.addEventListener("click", async () => {
-        await copyText(journalShareUrl(), "#journalShareOutput");
+        try {
+          const share = await createShortShare();
+          await copyText(shortShareUrl(share.code), "#journalShareOutput");
+          const target = document.querySelector("#journalShareOutput");
+          if (target) target.value = `${shortShareUrl(share.code)}\n\n8-digit code: ${share.code}\nExpires in ${share.expires_in_days || 30} days.\nCopied.`;
+        } catch (error) {
+          await copyText(journalShareUrl(), "#journalShareOutput");
+          const target = document.querySelector("#journalShareOutput");
+          if (target) target.value = `${target.value}\n\n8-digit codes need the server share store to be configured. This fallback link is safe but longer.`;
+        }
         renderSharePreview();
       });
       document.querySelector("#copyJournalShareCode")?.addEventListener("click", async () => {
-        await copyText(journalShareCode(), "#journalShareOutput");
+        try {
+          const share = await createShortShare();
+          await copyText(share.code, "#journalShareOutput");
+          const target = document.querySelector("#journalShareOutput");
+          if (target) target.value = `${share.code}\n\nGive this 8-digit code to a friend. It expires in ${share.expires_in_days || 30} days.\nCopied.`;
+        } catch (error) {
+          const target = document.querySelector("#journalShareOutput");
+          if (target) target.value = `${error.message || "8-digit share code unavailable."}\n\nUse Copy Friend Link as a safe fallback, or configure Vercel KV / Upstash Redis for short codes.`;
+        }
         renderSharePreview();
+      });
+      document.querySelector("#loadFriendShareCode")?.addEventListener("click", async () => {
+        const output = document.querySelector("#journalShareOutput");
+        const code = document.querySelector("#friendShareCodeInput")?.value || "";
+        try {
+          if (output) output.value = "Loading friend code...";
+          const payload = await loadShortShareCode(code);
+          if (output) output.value = `Loaded ${payload.records.length} shared ${payload.records.length === 1 ? "record" : "records"} from code ${String(code).replace(/\D/g, "").slice(0, 8)}.`;
+          setAtlasMode("journal");
+          setPage("map");
+        } catch (error) {
+          if (output) output.value = error.message || "Could not load this code.";
+        }
       });
       document.querySelector("#clearJournalShare")?.addEventListener("click", () => {
         localStorage.removeItem(`${storeKey}:shared`);
@@ -2570,7 +2644,8 @@ const pages = [
         navigator.serviceWorker.register("./sw.js").catch(() => {});
       }
 
-      loadSharedSnapshotFromUrl();
-      renderAll();
-      initializeAccessGate();
-      setPage(location.hash.replace("#", "") || "home");
+      loadSharedSnapshotFromUrl().finally(() => {
+        renderAll();
+        initializeAccessGate();
+        setPage(location.hash.replace("#", "") || "home");
+      });

@@ -1074,6 +1074,21 @@
         line-height: 1.45;
       }
 
+      .share-code-loader {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 10px;
+        align-items: end;
+        padding-top: 8px;
+        border-top: 1px solid rgba(16,42,92,.12);
+      }
+
+      .share-code-loader input {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+        letter-spacing: .12em;
+        font-weight: 900;
+      }
+
       .portrait-card {
         position: relative;
         overflow: hidden;
@@ -2424,6 +2439,7 @@
         .portrait-stats,
         .friend-preview-grid,
         .friend-visible-list,
+        .share-code-loader,
         .boundary-intro,
         .quick-capture,
         .start-grid,

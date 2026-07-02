@@ -23,7 +23,7 @@
     <meta name="twitter:card" content="summary_large_image" />
     <link rel="manifest" href="manifest.webmanifest" />
     <link rel="icon" href="assets/noted-states-icon.svg" type="image/svg+xml" />
-    <link rel="stylesheet" href="style.css?v=noted-states-share-confidence-20260701" />
+    <link rel="stylesheet" href="style.css?v=noted-states-short-share-20260701" />
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
@@ -336,10 +336,14 @@
             </div>
             <div class="panel share-panel friend-share-panel" id="journalSharePanel">
               <div class="eyebrow">Share with friends</div>
-              <h3>Exchange a limited read-only snapshot.</h3>
+              <h3>Exchange a limited read-only snapshot with an 8-digit code.</h3>
               <p class="small">Friends see selected titles, places, summaries, and map points. Your full notes and voice transcripts are not included.</p>
               <div class="toolbar"><button class="btn secondary" id="copyJournalShareLink">Copy Friend Link</button><button class="btn secondary" id="copyJournalShareCode">Copy Share Code</button><button class="btn secondary" id="clearJournalShare">Clear Friend Layer</button></div>
               <textarea id="journalShareOutput" readonly placeholder="Friend link or code appears here."></textarea>
+              <div class="share-code-loader">
+                <div class="field"><label>Have a friend's 8-digit code?</label><input id="friendShareCodeInput" inputmode="numeric" pattern="[0-9]*" maxlength="8" placeholder="12345678" /></div>
+                <button class="btn secondary" id="loadFriendShareCode">Load Code</button>
+              </div>
             </div>
           </div>
           <div class="panel friend-preview-panel">
@@ -397,6 +401,6 @@
 
     <script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/topojson-client@3/dist/topojson-client.min.js"></script>
-    <script src="app.js?v=noted-states-share-confidence-20260701"></script>
+    <script src="app.js?v=noted-states-short-share-20260701"></script>
   </body>
 </html>

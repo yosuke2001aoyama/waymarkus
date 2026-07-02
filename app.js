@@ -12,7 +12,7 @@ const pages = [
       const primaryPageIds = ["home", "capture", "map", "understand", "library", "share"];
       const lenses = ["General orientation", "Local history", "Food and local institutions", "Farm / rural life", "Race and community", "Economy and industries", "Religion and civic life", "Sports and local identity", "Nature and landscape", "Small-town life"];
       const types = ["Question", "Observation", "Conversation", "Food", "Farmstay", "Local institution", "Economic signal", "Cultural signal", "Reflection", "Road scene", "Other"];
-      const filters = ["All", "Trip Routes", "Visited Places", "Emotional bias", "State industries", "Questions", "Observations", "Food", "Farmstay", "Conversations", "Local institutions", "Economic signals", "Cultural signals", "Reflections", "Place Briefs", "Themes", "Unanswered questions", "Needs location", "Destination stock", "Export-ready"];
+      const filters = ["All", "Visited Places", "Notes", "Questions", "Food", "Farmstay", "Place Briefs", "Needs location"];
       const exports = ["Public-safe travel reflection", "Essay outline", "Substack-style essay", "Podcast script", "Japanese diary", "English field note", "Field report", "Markdown archive"];
       const syntheses = ["Recurring themes", "Compare places", "What surprised me", "Questions I kept asking", "What I learned about America", "Essay outline", "Podcast outline", "Field report"];
       let activeAtlasMode = "journal";
@@ -315,7 +315,7 @@ const pages = [
         return JSON.parse(new TextDecoder().decode(bytes));
       }
 
-      function safeShareRecords(records = loadRecords()) {
+      function safeShareRecords(records = loadPrivateRecords()) {
         return records
           .filter((record) => !record.shared && record.visibility !== "shared_snapshot")
           .slice(0, 80)
@@ -432,7 +432,7 @@ const pages = [
         localStorage.setItem(briefCacheKey, JSON.stringify(cache));
       }
 
-      function journeyPortraitData(records = loadRecords()) {
+      function journeyPortraitData(records = loadPrivateRecords()) {
         const regions = [...new Set(records.map((record) => record.state || lookup(record.place)[1]).filter((state) => state && state !== "Multi-state"))];
         records.filter((record) => record.type === "route").forEach((record) => (record.route_states || []).forEach((state) => {
           if (state && state !== "Multi-state" && !regions.includes(state)) regions.push(state);
@@ -447,7 +447,7 @@ const pages = [
           if (tag && !["question", "observation", "place brief", "quick capture"].includes(tag)) tagCounts[tag] = (tagCounts[tag] || 0) + 1;
         }));
         const topTheme = Object.entries(tagCounts).sort((a, b) => b[1] - a[1])[0]?.[0] || (records.length ? "place and memory" : "waiting to be noticed");
-        const spotlight = records.find((record) => !["visited", "route", "place_brief"].includes(record.type) && (record.summary || record.text || record.title)) || records.find((record) => record.summary || record.text || record.title);
+        const spotlight = records.find((record) => !["visited", "route", "place_brief"].includes(record.type) && (record.summary || record.text || record.title));
         const topNoticing = spotlight ? String(spotlight.summary || spotlight.text || spotlight.title || "").replace(/\s+/g, " ").trim().slice(0, 118) : "";
         const topPlace = spotlight?.place || "";
         return { states, regions, places, questions, meaningful, topTheme, topNoticing, topPlace, percent: Math.min(100, (states.length / 50) * 100) };
@@ -685,23 +685,19 @@ const pages = [
           context.fillText(stateAbbr(feature.properties.name), cx, cy + 4);
         });
         context.restore();
-        const spotlight = data.topNoticing || "A private map of the places you noticed.";
         context.textAlign = "center";
-        context.fillStyle = "#fffdf8";
-        context.font = "900 24px system-ui";
-        context.fillText(data.topPlace ? data.topPlace.toUpperCase() : "PRIVATE ROAD JOURNAL", 540, 930);
         context.fillStyle = "rgba(255,255,255,.9)";
-        context.font = "800 28px Georgia";
-        wrapCanvasText(context, spotlight, 540, 968, 800, 34, 2);
+        context.font = "900 24px system-ui";
+        context.fillText("PRIVATE ROAD JOURNAL", 540, 950);
         context.strokeStyle = "rgba(255,255,255,.34)";
         context.lineWidth = 1;
         context.beginPath();
-        context.moveTo(260, 1030);
-        context.lineTo(820, 1030);
+        context.moveTo(340, 1008);
+        context.lineTo(740, 1008);
         context.stroke();
         context.fillStyle = "rgba(255,255,255,.82)";
         context.font = "900 18px system-ui";
-        context.fillText("noted states", 540, 1058);
+        context.fillText("noted states", 540, 1042);
         return canvas;
       }
 
@@ -1861,7 +1857,7 @@ const pages = [
         }
         document.querySelector("#factbookDrawer").hidden = true;
         const located = filtered.filter((r) => r.lat && r.lon);
-        const routeRecords = (selected === "All" || selected === "Trip Routes") ? records.filter((r) => r.type === "route" && r.route_points?.length >= 2) : [];
+        const routeRecords = selected === "All" ? records.filter((r) => r.type === "route" && r.route_points?.length >= 2) : [];
         const visitedRecords = (selected === "All" || selected === "Visited Places") ? records.filter((r) => r.type === "visited" && r.lat && r.lon) : [];
         const showStock = selected === "Destination stock";
         const showIndustries = selected === "State industries";
@@ -1993,27 +1989,20 @@ const pages = [
 
       function filterRecords(records, selected) {
         const map = {
-          "Trip Routes": "route",
           "Visited Places": "visited",
           Questions: "question",
-          Observations: "observation",
           Food: "food",
           Farmstay: "farmstay",
-          Conversations: "conversation",
-          "Local institutions": "local_institution",
-          "Economic signals": "economic_signal",
-          "Cultural signals": "cultural_signal",
-          Reflections: "reflection",
           "Place Briefs": "place_brief",
         };
         if (selected === "All") return records;
+        if (selected === "Notes") return records.filter((r) => ["observation", "conversation", "reflection", "local_institution", "economic_signal", "cultural_signal"].includes(r.type));
         if (selected === "Destination stock") return [];
         if (selected === "State industries") return [];
         if (selected === "Emotional bias") return [];
         if (selected === "Themes") return records.filter((r) => String(r.tags || "").includes(","));
         if (selected === "Unanswered questions") return records.filter((r) => r.type === "question" && !r.generated_response && !r.ai);
         if (selected === "Needs location") return records.filter((r) => !r.lat || !r.lon);
-        if (selected === "Export-ready") return records.filter((r) => r.visibility.includes("candidate"));
         return records.filter((r) => r.type === map[selected]);
       }
 
@@ -2076,7 +2065,7 @@ const pages = [
         const data = journeyPortraitData();
         const editingState = target.dataset.editingState || "";
         const byState = {};
-        loadRecords().forEach((record) => {
+        loadPrivateRecords().filter((record) => ["visited", "route"].includes(record.type)).forEach((record) => {
           const states = record.type === "route" ? record.route_states || [] : [record.state || lookup(record.place)[1]];
           states.forEach((state) => {
             if (!state || state === "Multi-state") return;
@@ -2185,7 +2174,7 @@ const pages = [
         if (industryPanel) industryPanel.hidden = safeMode !== "industries";
         const biasPanel = document.querySelector("#biasPanel");
         if (biasPanel) biasPanel.hidden = safeMode !== "bias";
-        document.querySelector("#mapFilter").value = safeMode === "route" ? "Trip Routes" : safeMode === "visited" ? "Visited Places" : safeMode === "industries" ? "State industries" : safeMode === "bias" ? "Emotional bias" : "All";
+        document.querySelector("#mapFilter").value = safeMode === "visited" ? "Visited Places" : "All";
         renderMap();
         renderStateProgress();
         if (safeMode === "live") renderBoundaryPreview();

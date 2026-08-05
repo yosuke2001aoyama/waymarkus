@@ -1,4 +1,4 @@
-const CACHE = "noted-states-pwa-v1-20260701";
+const CACHE = "noted-states-pwa-v2-20260804-ux-flow";
 const SHELL = [
   "/",
   "/index.html",

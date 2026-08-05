@@ -1,5 +1,7 @@
-const CACHE = "noted-states-pwa-v2-20260702";
+const CACHE = "noted-states-pwa-v2-20260804-ux-flow";
 const SHELL = [
+  "/",
+  "/index.html",
   "/style.css",
   "/app.js",
   "/offline.html",
@@ -21,14 +23,6 @@ self.addEventListener("activate", (event) => {
 self.addEventListener("fetch", (event) => {
   const request = event.request;
   if (request.method !== "GET" || new URL(request.url).pathname.startsWith("/api/")) return;
-
-  if (request.mode === "navigate") {
-    event.respondWith(
-      fetch(request).catch(() => caches.match("/offline.html"))
-    );
-    return;
-  }
-
   event.respondWith(
     fetch(request)
       .then((response) => {

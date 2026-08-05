@@ -450,24 +450,55 @@ const pages = [
         const spotlight = records.find((record) => !["visited", "route", "place_brief"].includes(record.type) && (record.summary || record.text || record.title));
         const topNoticing = spotlight ? String(spotlight.summary || spotlight.text || spotlight.title || "").replace(/\s+/g, " ").trim().slice(0, 118) : "";
         const topPlace = spotlight?.place || "";
-        return { states, regions, places, questions, meaningful, topTheme, topNoticing, topPlace, percent: Math.min(100, (states.length / 50) * 100) };
+        const latestPlace = records.find((record) => record.place)?.place || "";
+        return { states, regions, places, questions, meaningful, topTheme, topNoticing, topPlace, latestPlace, spotlightId: spotlight?.id || "", percent: Math.min(100, (states.length / 50) * 100) };
       }
 
-      function portraitMarkup(records = loadRecords()) {
+      function portraitMarkup(records = loadPrivateRecords()) {
         const data = journeyPortraitData(records);
         if (!records.length) {
-          return `<article class="portrait-card"><div class="eyebrow">Your private journey portrait</div><h3>A blank map is an invitation.</h3><p>Ask one place question or save one field note. Noted States will build a portrait of what you noticed, not a trail of everywhere you went.</p><button class="btn light portrait-start">Capture the first observation</button></article>`;
+          return `<article class="portrait-card next-step-card"><div><div class="eyebrow">Your first 30 seconds</div><h3>Start with the easiest memory.</h3><p>Mark one place you have been. Add the thought behind it now or later.</p></div><div class="next-step-actions"><button class="btn light portrait-mark">Mark a Place</button><button class="btn secondary portrait-start">Capture a Thought</button><button class="btn secondary portrait-sample">See an Example</button></div></article>`;
         }
-        return `<article class="portrait-card"><div class="eyebrow">Journey portrait</div><h3>${escapeHtml(data.states.length ? `${data.states.length} ${data.states.length === 1 ? "state" : "states"} visited` : `A journey shaped by ${data.topTheme}`)}</h3><div class="portrait-stats"><div class="portrait-stat"><strong>${data.states.length}</strong><span>states</span></div><div class="portrait-stat"><strong>${data.places.length}</strong><span>places</span></div><div class="portrait-stat"><strong>${data.meaningful}</strong><span>notes</span></div><div class="portrait-stat"><strong>${data.questions}</strong><span>questions</span></div></div><div class="toolbar"><button class="btn light share-portrait">Create card</button><button class="btn secondary portrait-map">Open Map</button></div></article>`;
+        const stats = `<div class="portrait-stats"><div class="portrait-stat"><strong>${data.states.length}</strong><span>states</span></div><div class="portrait-stat"><strong>${data.places.length}</strong><span>places</span></div><div class="portrait-stat"><strong>${data.meaningful}</strong><span>notes</span></div><div class="portrait-stat"><strong>${data.questions}</strong><span>questions</span></div></div>`;
+        if (!data.meaningful) {
+          return `<article class="portrait-card next-step-card"><div><div class="eyebrow">Continue your journey</div><h3>Your map has a place. Give it one memory.</h3><p>${escapeHtml(data.latestPlace ? `What do you still remember about ${data.latestPlace}?` : "What surprised you, sounded different, or stayed with you?")}</p></div>${stats}<div class="next-step-actions"><button class="btn light portrait-capture" data-place="${escapeHtml(data.latestPlace)}">Capture What Mattered</button><button class="btn secondary portrait-map">Open Map</button></div></article>`;
+        }
+        if (data.meaningful < 3) {
+          return `<article class="portrait-card next-step-card"><div><div class="eyebrow">Continue your journey</div><h3>Keep one memory moving.</h3><p>${escapeHtml(data.topNoticing || "Add another observation or ask one question about what you noticed.")}</p></div>${stats}<div class="next-step-actions"><button class="btn light portrait-capture" data-place="${escapeHtml(data.topPlace || data.latestPlace)}">Add Another Thought</button>${data.spotlightId ? `<button class="btn secondary portrait-ask" data-record-id="${escapeHtml(data.spotlightId)}">Ask About This</button>` : ""}<button class="btn secondary portrait-map">Open Map</button></div></article>`;
+        }
+        return `<article class="portrait-card next-step-card"><div><div class="eyebrow">Ready for a look back</div><h3>See what this journey is beginning to say.</h3><p>${escapeHtml(data.topNoticing || `Your notes are forming a pattern around ${data.topTheme}.`)}</p></div>${stats}<div class="next-step-actions"><button class="btn light portrait-synthesize">Reflect on This Journey</button><button class="btn secondary portrait-capture" data-place="${escapeHtml(data.topPlace || data.latestPlace)}">Add Another Thought</button><button class="btn secondary portrait-map">Open Map</button><button class="btn secondary share-portrait">Create Card</button></div></article>`;
       }
 
       function renderJourneyPortrait() {
         const markup = portraitMarkup();
         ["#homeJourneyPortrait", "#mapJourneyPortrait"].forEach((selector) => {
           const target = document.querySelector(selector);
-          if (target) target.innerHTML = markup;
+          if (target) target.innerHTML = selector === "#mapJourneyPortrait" && activeAtlasMode === "factbook" ? "" : markup;
         });
         document.querySelectorAll(".portrait-start").forEach((button) => button.addEventListener("click", () => setPage("capture")));
+        document.querySelectorAll(".portrait-mark").forEach((button) => button.addEventListener("click", () => {
+          setPage("map");
+          setAtlasMode("journal", { mapMode: "visited" });
+        }));
+        document.querySelectorAll(".portrait-capture").forEach((button) => button.addEventListener("click", () => {
+          const place = button.dataset.place || "";
+          if (place) document.querySelector("#notePlace").value = place;
+          setPage("capture");
+          document.querySelector("#noteText")?.focus();
+        }));
+        document.querySelectorAll(".portrait-ask").forEach((button) => button.addEventListener("click", () => {
+          const record = loadPrivateRecords().find((item) => item.id === button.dataset.recordId);
+          if (!record) return;
+          document.querySelector("#askPlace").value = record.place || "";
+          document.querySelector("#askObservation").value = `I noticed: ${record.text || record.summary || record.title}. What else should I consider?`;
+          setPage("ask");
+        }));
+        document.querySelectorAll(".portrait-synthesize").forEach((button) => button.addEventListener("click", () => setPage("synthesize")));
+        document.querySelectorAll(".portrait-sample").forEach((button) => button.addEventListener("click", async () => {
+          sampleJourneyVisible = true;
+          await renderSampleJourneyPreview();
+          document.querySelector("#sampleJourneyPreview")?.scrollIntoView({ behavior: "smooth", block: "center" });
+        }));
         document.querySelectorAll(".portrait-map").forEach((button) => button.addEventListener("click", () => setPage("map")));
         document.querySelectorAll(".share-portrait").forEach((button) => button.addEventListener("click", shareJourneyPortrait));
       }
@@ -1691,6 +1722,9 @@ const pages = [
 
       function setPage(id) {
         if (!pages.some(([pageId]) => pageId === id)) id = "home";
+        document.body.dataset.page = id;
+        const modeShell = document.querySelector(".mode-shell");
+        if (modeShell) modeShell.hidden = id !== "map";
         document.querySelectorAll(".page").forEach((page) => page.classList.toggle("active", page.id === id));
         document.querySelectorAll(".nav-btn").forEach((btn) => btn.classList.toggle("active", btn.dataset.page === id));
         document.querySelectorAll(".bottom-nav-btn").forEach((btn) => btn.classList.toggle("active", btn.dataset.page === id));
@@ -1827,7 +1861,7 @@ const pages = [
         output.innerHTML = renderAskAnswer(data) + `<div class="toolbar"><button class="btn" id="saveQuestion">Save as Question</button><button class="btn secondary" id="saveObservation">Save as Observation</button></div>`;
         status.textContent = statusText;
         const saveAnswer = (type) => {
-          const records = loadRecords();
+          const records = loadPrivateRecords();
           const tags = (data.suggested_tags || [type, lens]).join(",");
           records.unshift(makeRecord(type, titleFrom(observation), place, observation, tags, {
             ai: JSON.stringify(data), generated_response: data.intelligent_brief,
@@ -1837,7 +1871,8 @@ const pages = [
             summary: data.intelligent_brief.slice(0, 240),
           }));
           saveRecords(records);
-          output.insertAdjacentHTML("afterbegin", `<article class="save-confirmation"><div class="eyebrow">Your journey is growing</div><h3>Saved to ${escapeHtml(place)}.</h3><p>Tagged: ${escapeHtml(tags)}. Added to Memory Map. You now have ${records.length} private ${records.length === 1 ? "record" : "records"}.</p><div class="toolbar"><button class="btn confirmation-go" data-destination="map">View on Memory Map</button><button class="btn secondary confirmation-go" data-destination="ask">Add another observation</button><button class="btn secondary confirmation-go" data-destination="synthesize">Synthesize this journey</button></div></article>`);
+          const readyToReflect = journeyPortraitData(records).meaningful >= 3;
+          output.insertAdjacentHTML("afterbegin", `<article class="save-confirmation"><div class="eyebrow">Saved privately</div><h3>Your journey has a new thread.</h3><p>Added to ${escapeHtml(place)} with ${escapeHtml(tags)}. Choose one next step when you are ready.</p><div class="toolbar"><button class="btn confirmation-go" data-destination="map">See It on the Map</button>${readyToReflect ? `<button class="btn secondary confirmation-go" data-destination="synthesize">Reflect on This Journey</button>` : `<button class="btn secondary confirmation-go" data-destination="capture">Capture Another Thought</button>`}</div></article>`);
           document.querySelectorAll(".confirmation-go").forEach((button) => button.addEventListener("click", () => setPage(button.dataset.destination)));
           status.textContent = `Saved privately as ${type === "question" ? "a question" : "an observation"}.`;
         };
@@ -2216,6 +2251,19 @@ const pages = [
         saveRecords(records);
         document.querySelector("#visitedPlace").value = "";
         renderStateProgress();
+        const feedback = document.querySelector("#mapActionFeedback");
+        if (feedback) {
+          feedback.innerHTML = `<article class="save-confirmation"><div class="eyebrow">Place marked</div><h3>${escapeHtml(canonical)} is on your map.</h3><p>You can stop here, or add the one detail you still remember.</p><div class="toolbar"><button class="btn light map-follow-up" data-action="capture">Capture What Mattered</button><button class="btn secondary map-follow-up" data-action="map">Keep Exploring the Map</button></div></article>`;
+          feedback.querySelectorAll(".map-follow-up").forEach((button) => button.addEventListener("click", () => {
+            if (button.dataset.action === "capture") {
+              document.querySelector("#notePlace").value = canonical;
+              setPage("capture");
+              document.querySelector("#noteText")?.focus();
+            } else {
+              document.querySelector("#memoryMap")?.scrollIntoView({ behavior: "smooth", block: "start" });
+            }
+          }));
+        }
       }
 
       function addVisitedRecord(place, level = "Stopped there") {
@@ -2288,6 +2336,11 @@ const pages = [
         sampleJourneyVisible = true;
         await renderSampleJourneyPreview();
       });
+      document.querySelector("#showSampleFromHero")?.addEventListener("click", async () => {
+        sampleJourneyVisible = true;
+        await renderSampleJourneyPreview();
+        document.querySelector("#sampleJourneyPreview")?.scrollIntoView({ behavior: "smooth", block: "center" });
+      });
       document.querySelector("#hideSampleJourney")?.addEventListener("click", async () => {
         sampleJourneyVisible = false;
         await renderSampleJourneyPreview();
@@ -2295,6 +2348,7 @@ const pages = [
       fillSelect("#briefLens", lenses);
       fillSelect("#askLens", ["General curiosity", "Local history", "Economy", "Religion and civic life", "Race and community", "Agriculture", "Food culture", "Urban design", "Sports and identity", "Transportation", "Nature and landscape"]);
       fillSelect("#noteType", types);
+      document.querySelector("#noteType").value = "Observation";
       fillSelect("#mapFilter", filters);
       fillSelect("#libraryFilter", filters);
       fillSelect("#exportType", exports);
@@ -2461,8 +2515,20 @@ const pages = [
         document.querySelector("#homeQuickText").value = "";
         if (document.querySelector("#homeQuickPlace")) document.querySelector("#homeQuickPlace").value = "";
         document.querySelector("#homeVoiceStatus").textContent = "Saved privately.";
-        document.querySelector("#homeQuickOutput").innerHTML = `<article class="save-confirmation"><h3>Saved${place ? ` to ${escapeHtml(place)}` : " as a private note"}.</h3><p>${place ? "Added to Memory Map. " : "Add a place later to map it. "}You now have ${records.length} private ${records.length === 1 ? "record" : "records"}.</p><div class="toolbar"><button class="btn home-save-go" data-destination="${place ? "map" : "library"}">${place ? "View on Memory Map" : "Open Library"}</button><button class="btn secondary home-save-go" data-destination="capture">Add details</button></div></article>`;
-        document.querySelectorAll(".home-save-go").forEach((button) => button.addEventListener("click", () => setPage(button.dataset.destination)));
+        document.querySelector("#homeQuickOutput").innerHTML = `<article class="save-confirmation"><div class="eyebrow">Saved privately</div><h3>${place ? `${escapeHtml(place)} now has a memory.` : "Your thought is safe."}</h3><p>${place ? "It is on your map. " : "Add a place later to map it. "}Choose one next step, or stop here.</p><div class="toolbar"><button class="btn home-save-go" data-action="${place ? "map" : "library"}">${place ? "See It on the Map" : "See Saved Note"}</button>${place ? `<button class="btn secondary home-save-go" data-action="ask">Ask About This</button>` : ""}<button class="btn secondary home-save-go" data-action="details">Add More Detail</button></div></article>`;
+        document.querySelectorAll(".home-save-go").forEach((button) => button.addEventListener("click", () => {
+          if (button.dataset.action === "ask") {
+            document.querySelector("#askPlace").value = place;
+            document.querySelector("#askObservation").value = text;
+            setPage("ask");
+          } else if (button.dataset.action === "details") {
+            document.querySelector("#notePlace").value = place;
+            document.querySelector("#noteText").value = text;
+            setPage("capture");
+          } else {
+            setPage(button.dataset.action);
+          }
+        }));
       });
 
       document.querySelector("#noteToAsk").addEventListener("click", () => {
@@ -2481,8 +2547,17 @@ const pages = [
         const records = loadPrivateRecords();
         records.unshift(makeRecord(type, title, place, text, type, { visibility: document.querySelector("#noteVisibility").value }));
         saveRecords(records);
-        document.querySelector("#captureOutput").innerHTML = `<article class="save-confirmation"><div class="eyebrow">Your journey is growing</div><h3>Saved${place ? ` to ${escapeHtml(place)}` : " privately"}.</h3><p>${place ? "Added to Memory Map. " : "It needs a place before it can appear on the map. "}You now have ${records.length} private ${records.length === 1 ? "record" : "records"}.</p><div class="toolbar"><button class="btn capture-go" data-destination="library">Open Library</button><button class="btn secondary capture-go" data-destination="${place ? "map" : "capture"}">${place ? "View Map" : "Add location"}</button></div></article>`;
-        document.querySelectorAll(".capture-go").forEach((button) => button.addEventListener("click", () => setPage(button.dataset.destination)));
+        const readyToReflect = journeyPortraitData(records).meaningful >= 3;
+        document.querySelector("#noteTitle").value = "";
+        document.querySelector("#noteText").value = "";
+        document.querySelector("#captureOutput").innerHTML = `<article class="save-confirmation"><div class="eyebrow">Saved privately</div><h3>${place ? `${escapeHtml(place)} now has a memory.` : "Your thought is safe."}</h3><p>${place ? "It is on your map. " : "Add a place whenever you want it mapped. "}Choose one next step, or stop here.</p><div class="toolbar"><button class="btn capture-go" data-action="${place ? "map" : "library"}">${place ? "See It on the Map" : "See Saved Note"}</button>${place ? `<button class="btn secondary capture-go" data-action="ask">Ask About This</button>` : ""}${readyToReflect ? `<button class="btn secondary capture-go" data-action="synthesize">Reflect on This Journey</button>` : ""}</div></article>`;
+        document.querySelectorAll(".capture-go").forEach((button) => button.addEventListener("click", () => {
+          if (button.dataset.action === "ask") {
+            document.querySelector("#askPlace").value = place;
+            document.querySelector("#askObservation").value = text;
+          }
+          setPage(button.dataset.action === "ask" ? "ask" : button.dataset.action);
+        }));
       });
 
       document.querySelector("#mapFilter").addEventListener("change", renderMap);

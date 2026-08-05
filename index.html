@@ -24,7 +24,7 @@
     <link rel="manifest" href="/manifest.json" />
     <link rel="icon" href="assets/noted-states-icon.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="/icon-192.png" />
-    <link rel="stylesheet" href="style.css?v=noted-states-mobile-card-fix-20260701" />
+    <link rel="stylesheet" href="style.css?v=noted-states-ux-flow-20260804" />
     <script>
       if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
         window.addEventListener("load", () => {
@@ -69,19 +69,32 @@
         <section class="page active" id="home">
           <div class="simple-start">
             <div class="home-mark">Noted States</div>
-            <div class="eyebrow">Private road journal</div>
-            <h1>Notice. Mark. Understand.</h1>
-            <h2>A simple U.S. map for the thoughts, states, roads, and places you want to remember.</h2>
-            <p class="simple-copy">Start with one action: record a noticing, mark where you have been, or open the Factbook when you want context.</p>
+            <div class="eyebrow">Private U.S. travel journal</div>
+            <h1>Map the trip. Keep what mattered.</h1>
+            <h2>Mark where you have been, capture what surprised you, and see the patterns later.</h2>
+            <p class="simple-copy">Start with one place or one thought. No account needed.</p>
+            <div class="hero-actions home-hero-actions" aria-label="Start Noted States">
+              <button class="btn gold" data-go="map" data-atlas-mode="journal" data-map-mode="visited">Mark a Place</button>
+              <button class="btn light" data-go="capture">Capture a Thought</button>
+              <button class="hero-link" id="showSampleFromHero">See a Sample Journey</button>
+            </div>
+            <p class="home-privacy-note">Private by default · Notes stay in this browser unless you choose to share.</p>
             <div class="home-map-stage">
               <div class="mini-us-map" id="homeMapSnapshot" aria-label="Private map preview"></div>
             </div>
           </div>
+          <div class="journey-portrait" id="homeJourneyPortrait" aria-live="polite"></div>
           <div class="quick-capture home-flow" aria-label="Primary actions">
+            <article class="quick-card action-card map-entry-card">
+              <div class="eyebrow">Start simple</div>
+              <h3>Add where you have been.</h3>
+              <p>Mark a state, city, park, campus, stadium, or road stop. You can add the memory behind it whenever you are ready.</p>
+              <button class="btn" data-go="map" data-atlas-mode="journal" data-map-mode="visited">Mark Visited Places</button>
+            </article>
             <article class="quick-card primary">
-              <div class="eyebrow">1 · Record a noticing</div>
-              <h3>Say the thought before it disappears.</h3>
-              <p>Voice or text. Add a place if you know it; Noted States can also infer a likely place from what you wrote.</p>
+              <div class="eyebrow">Save what mattered</div>
+              <h3>Catch the thought before it disappears.</h3>
+              <p>Use voice or text. A place is helpful, but optional.</p>
               <div class="capture-row capture-row-location">
                 <input id="homeQuickPlace" list="destinationOptions" placeholder="Optional place: Taos, NM" />
                 <button class="btn light" id="homeMic">Start Voice</button>
@@ -101,25 +114,17 @@
               <div class="output" id="homeQuickOutput" aria-live="polite"></div>
             </article>
             <article class="quick-card action-card">
-              <div class="eyebrow">2 · Mark your map</div>
-              <h3>Track states and spots you have actually touched.</h3>
-              <p>Mark a state, city, park, campus, stadium, or road stop. DC appears on the map but does not count as a state.</p>
-              <button class="btn" data-go="map" data-atlas-mode="journal" data-map-mode="visited">Mark Visited Places</button>
-            </article>
-            <article class="quick-card action-card">
-              <div class="eyebrow">3 · Learn the context</div>
-              <h3>Use Factbook when you want the country behind the road.</h3>
-              <p>Switch into clean layers for politics, population, climate, vegetation, and industry without mixing them into your private notes.</p>
+              <div class="eyebrow">Add context when curious</div>
+              <h3>Look behind the place.</h3>
+              <p>Explore clean Factbook layers for politics, population, climate, vegetation, and industry. Your private notes stay separate.</p>
               <button class="btn secondary" data-go="map" data-atlas-mode="factbook">Open Factbook</button>
             </article>
           </div>
-          <div class="journey-portrait" id="homeJourneyPortrait" aria-live="polite"></div>
-          <section class="seo-landing" aria-labelledby="seoLandingTitle">
+          <section class="seo-landing sample-landing" aria-labelledby="sampleLandingTitle">
             <div class="seo-copy">
-              <div class="eyebrow">U.S. road trip journal</div>
-              <h2 id="seoLandingTitle">A private map of the places, states, and road notes you want to remember.</h2>
-              <p>Noted States is a private U.S. road trip journal and travel record map for people who want to remember what they noticed, not just where they went. Mark visited states, cities, national parks, campuses, stadiums, and road stops; capture voice or text field notes; then compare your personal journey with clean Factbook layers for population, climate, income, industries, demographics, and elections.</p>
-              <p class="small">Use it for an America road trip, Amtrak ride, study-abroad memory map, farm stay journal, or a simple visited-states tracker. Your private notes stay in your browser unless you choose to create a share card or limited friend link.</p>
+              <div class="eyebrow">See the full loop</div>
+              <h2 id="sampleLandingTitle">See what a few small notes can become.</h2>
+              <p>Preview a finished journey before adding your own. The sample shows how places, questions, and memories become one private map.</p>
               <div class="toolbar">
                 <button class="btn" id="previewSampleJourney">Preview a Sample Journey</button>
                 <button class="btn secondary" id="hideSampleJourney" hidden>Hide Sample</button>
@@ -132,28 +137,39 @@
               </div>
             </div>
           </section>
-          <section class="faq-section" aria-labelledby="faqTitle">
-            <div class="eyebrow">FAQ</div>
-            <h2 id="faqTitle">What makes Noted States different?</h2>
-            <div class="faq-grid">
-              <details open>
-                <summary>What is Noted States?</summary>
-                <p>Noted States is a private AI field journal and U.S. road trip map. It helps you record visited states and meaningful places, save quick observations, and turn travel memories into a map you can actually understand later.</p>
-              </details>
-              <details>
-                <summary>Is this a route tracker or travel planner?</summary>
-                <p>No. Navigation apps remember the route. Noted States remembers the noticing: questions, conversations, food memories, farmstay reflections, and the places that changed how a state felt to you.</p>
-              </details>
-              <details>
-                <summary>What is My Journal vs. Factbook?</summary>
-                <p>My Journal is subjective: your notes, visited places, and emotional memory map. Factbook is objective: state-by-state layers such as population size, climate zones, industries, income, demographics, and 2024 presidential results.</p>
-              </details>
-              <details>
-                <summary>Can I share my journey?</summary>
-                <p>Yes. You can create a visual journey card or limited friend link. Raw private notes are not published automatically.</p>
-              </details>
+          <details class="about-disclosure">
+            <summary>About Noted States, privacy, and sharing</summary>
+            <div class="about-disclosure-body">
+              <section class="about-product" aria-labelledby="seoLandingTitle">
+                <div class="eyebrow">U.S. road trip journal</div>
+                <h2 id="seoLandingTitle">A private map of the places, states, and road notes you want to remember.</h2>
+                <p>Noted States is a private U.S. road trip journal and travel record map for people who want to remember what they noticed, not just where they went. Mark visited states, cities, national parks, campuses, stadiums, and road stops; capture voice or text field notes; then compare your personal journey with clean Factbook layers for population, climate, income, industries, demographics, and elections.</p>
+                <p class="small">Use it for an America road trip, Amtrak ride, study-abroad memory map, farm stay journal, or a simple visited-states tracker. Your private notes stay in your browser unless you choose to create a share card or limited friend link.</p>
+              </section>
+              <section class="faq-section" aria-labelledby="faqTitle">
+                <div class="eyebrow">FAQ</div>
+                <h2 id="faqTitle">What makes Noted States different?</h2>
+                <div class="faq-grid">
+                  <details open>
+                    <summary>What is Noted States?</summary>
+                    <p>Noted States is a private AI field journal and U.S. road trip map. It helps you record visited states and meaningful places, save quick observations, and turn travel memories into a map you can actually understand later.</p>
+                  </details>
+                  <details>
+                    <summary>Is this a route tracker or travel planner?</summary>
+                    <p>No. Navigation apps remember the route. Noted States remembers the noticing: questions, conversations, food memories, farmstay reflections, and the places that changed how a state felt to you.</p>
+                  </details>
+                  <details>
+                    <summary>What is My Journal vs. Factbook?</summary>
+                    <p>My Journal is subjective: your notes, visited places, and emotional memory map. Factbook is objective: state-by-state layers such as population size, climate zones, industries, income, demographics, and 2024 presidential results.</p>
+                  </details>
+                  <details>
+                    <summary>Can I share my journey?</summary>
+                    <p>Yes. You can create a visual journey card or limited friend link. Raw private notes are not published automatically.</p>
+                  </details>
+                </div>
+              </section>
             </div>
-          </section>
+          </details>
         </section>
 
         <section class="page" id="understand">
@@ -264,6 +280,7 @@
               <div class="field"><label>Memory level</label><select id="visitedLevel"><option>Passed through</option><option>Stopped there</option><option>Stayed overnight</option><option>Meaningful memory</option></select></div>
             </div>
             <div class="toolbar"><button class="btn" id="markVisited">Mark Visited</button><button class="btn secondary" id="shareTravelMap">Create Card</button></div>
+            <div class="output map-action-feedback" id="mapActionFeedback" aria-live="polite"></div>
             <div class="state-progress" id="stateProgress" aria-live="polite"></div>
           </div>
           <div class="boundary-intro" id="livePanel" hidden>
@@ -409,6 +426,6 @@
 
     <script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/topojson-client@3/dist/topojson-client.min.js"></script>
-    <script src="app.js?v=noted-states-mobile-card-fix-20260701"></script>
+    <script src="app.js?v=noted-states-ux-flow-20260804"></script>
   </body>
 </html>
